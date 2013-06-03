@@ -1,27 +1,31 @@
 module RunTest
 
-  def self.command(args)
-    expression = args.first
-    if File.exist? expression
-      opts = expression
-    elsif expression =~ /^[A-Z]/
-      clazz = expression
+  def self.command(target)
+    files, test_case = if File.exist? target
+      [Array(target)]
+    elsif target =~ /^[A-Z]/
+      clazz = target
       clazz = "#{clazz}Test" unless clazz.end_with? "Test"
-      opts = `grep -R "^class #{clazz}" -l test`
+      [grep("^class #{clazz}")]
     else
-      expression = expression.dup
-      expression.gsub!(/_/, "[ _]") unless expression =~ /^".*"$/
-      files = `grep -R "#{expression}" -l test`.split("\n")
-      file = files.sort_by!{ |f| File.basename(f).size }.first
-      opts = "#{file}"
+      expression = target.gsub(/[ _]/, "[ _]")
+      [grep(expression), expression]
     end
-    die("could not find tests for #{expression}") if opts.nil? || opts == ""
-    "ruby -Itest #{opts}"
+    file = files.sort_by!{ |f| File.basename(f).size }.first
+    die("could not find tests for #{target}") unless file
+    test_cases = test_case ? " -n \"#{test_case}\"" : ""
+    "ruby -Itest #{file}#{test_cases}"
   end
+
+  private
 
   def self.die(message, code = 1)
     puts "error: #{message}"
     exit(code)
+  end
+
+  def self.grep(expression)
+    `grep -R "#{expression}" -l test`.split("\n")
   end
 
 end

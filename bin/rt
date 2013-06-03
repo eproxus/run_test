@@ -2,4 +2,4 @@
 
 require 'run_test'
 
-exec(RunTest.command(ARGV))
+exec(RunTest.command(ARGV.first))
